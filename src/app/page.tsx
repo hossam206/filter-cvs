@@ -5,7 +5,7 @@ import FileUpload from "@/components/FileUpload";
 import FilterPanel from "@/components/FilterPanel";
 import CVGrid from "@/components/CVGrid";
 import { CVData, FilterCriteria } from "@/types/cv";
-import { calculateMatchScore } from "@/lib/gemini";
+import { calculateMatchScore } from "@/lib/mathScore";
 
 export default function Home() {
   const [cvs, setCvs] = useState<CVData[]>([]);
@@ -34,32 +34,33 @@ export default function Home() {
         method: "POST",
         body: formData,
       });
-      console.log('response is', response)
+      console.log("response is", response);
       if (!response.ok) {
         const text = await response.text();
         console.error("API Error Response:", text);
-        throw new Error(`Failed to process CVs: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Failed to process CVs: ${response.status} ${response.statusText}`,
+        );
       }
 
       const result = await response.json();
-      console.log('result', result)
+      console.log("result", result);
       if (result.data && result.data.length > 0) {
         setCvs(result.data);
         setProcessingStatus(
-          `Successfully processed ${result.processedCount} of ${result.totalCount} files`
+          `Successfully processed ${result.processedCount} of ${result.totalCount} files`,
         );
       } else {
         if (result.errors && result.errors.length > 0) {
           setError(
             result.errors
               .map((e: any) => `${e.fileName}: ${e.error}`)
-              .join("\n")
+              .join("\n"),
           );
         } else {
           setError("No valid CVs could be processed");
         }
       }
-
 
       if (result.errors && result.errors.length > 0) {
         console.warn("Some files had errors:", result.errors);
@@ -90,7 +91,7 @@ export default function Home() {
       filtered = filtered.filter(
         (cv) =>
           cv.yearsOfExperience >= filters.minExperience &&
-          cv.yearsOfExperience <= filters.maxExperience
+          cv.yearsOfExperience <= filters.maxExperience,
       );
     }
 
@@ -99,7 +100,9 @@ export default function Home() {
       filtered = filtered.filter((cv) => {
         const cvSkillsLower = cv.skills.map((s) => s.toLowerCase());
         return filters.skills.some((skill) =>
-          cvSkillsLower.some((cvSkill) => cvSkill.includes(skill.toLowerCase()))
+          cvSkillsLower.some((cvSkill) =>
+            cvSkill.includes(skill.toLowerCase()),
+          ),
         );
       });
     }
@@ -115,8 +118,8 @@ export default function Home() {
           cv.companies.some(
             (c) =>
               c.name.toLowerCase().includes(query) ||
-              c.position.toLowerCase().includes(query)
-          )
+              c.position.toLowerCase().includes(query),
+          ),
       );
     }
 
@@ -166,7 +169,9 @@ export default function Home() {
                 </div>
                 <div>
                   <h1 className="text-xl font-bold text-white">CV Filter</h1>
-                  <p className="text-xs text-gray-400">AI-Powered Resume Screening</p>
+                  <p className="text-xs text-gray-400">
+                    AI-Powered Resume Screening
+                  </p>
                 </div>
               </div>
               {cvs.length > 0 && (
@@ -274,9 +279,7 @@ export default function Home() {
                       </span>
                     )}
                   </h2>
-                  <p className="text-sm text-gray-400">
-                    Sorted by match score
-                  </p>
+                  <p className="text-sm text-gray-400">Sorted by match score</p>
                 </div>
                 <CVGrid cvs={filteredAndSortedCvs} isLoading={isLoading} />
               </div>
