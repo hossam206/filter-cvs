@@ -2,7 +2,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const API_KEY =
-  process.env.GEMINI_API_KEY || "AIzaSyDz-4RuflqH6z8yoJqRxAsgWiwMNJCucO4";
+  process.env.GEMINI_API_KEY || "AIzaSyABGvLHVmtmGaGLisTcZMDSz8BoHZc7eiY";
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 const modelsToTry = [

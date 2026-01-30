@@ -3,65 +3,45 @@ import { CVData, Company } from "@/types/cv";
 import { v4 as uuidv4 } from "uuid";
 
 const genAI = new GoogleGenerativeAI(
-  process.env.GEMINI_API_KEY || "AIzaSyDz-4RuflqH6z8yoJqRxAsgWiwMNJCucO4",
+  process.env.GEMINI_API_KEY || "AIzaSyABGvLHVmtmGaGLisTcZMDSz8BoHZc7eiY"
 );
 
-// model initialized once (IMPORTANT)
+// ✅ موديل شغال
 const model = genAI.getGenerativeModel({
-  model: "gemini-1.5-flash",
+  model: "gemini-2.0-flash",
 });
 
 export async function parseCVWithGemini(
   textContent: string,
   fileName: string,
 ): Promise<CVData> {
-  const prompt = `You are an expert CV/Resume parser. Analyze the following CV text and extract structured information.
+  const prompt = `
+Return ONLY valid JSON. No explanation. No markdown.
 
-Return a JSON object with the following structure (and nothing else, just the raw JSON):
 {
-  "name": "Full name of the candidate",
-  "email": "Email address if found, or null",
-  "phone": "Phone number if found, or null",
-  "yearsOfExperience": <number - total years of professional experience, estimate if not explicit>,
-  "skills": ["skill1", "skill2", ...],
-  "companies": [
-    {
-      "name": "Company name",
-      "position": "Job title/position",
-      "duration": "Duration worked (e.g., '2020-2023' or '2 years')"
-    }
-  ],
-  "summary": "A brief 2-3 sentence professional summary of this candidate"
+  "name": "",
+  "email": null,
+  "phone": null,
+  "yearsOfExperience": 0,
+  "skills": [],
+  "companies": [],
+  "summary": ""
 }
 
-Rules:
-1. For yearsOfExperience, calculate the total from work history if not explicitly stated
-2. List companies in reverse chronological order (most recent first)
-3. Extract all relevant technical and soft skills
-4. If information is missing, use null for optional fields or reasonable defaults
-5. The summary should highlight key strengths and experience areas
-
 CV Text:
-${textContent}`;
+${textContent}
+`;
 
   try {
     const result = await model.generateContent(prompt);
-    const response = result.response;
-    const text = response.text();
+    const text = result.response.text();
 
-    // Extract JSON from the response (handle markdown code blocks)
-    let jsonStr = text;
-    const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) {
-      jsonStr = jsonMatch[1].trim();
-    } else {
-      const objectMatch = text.match(/\{[\s\S]*\}/);
-      if (objectMatch) {
-        jsonStr = objectMatch[0];
-      }
-    }
+    const cleanJson = text
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
 
-    const parsed = JSON.parse(jsonStr);
+    const parsed = JSON.parse(cleanJson);
 
     return {
       id: uuidv4(),
