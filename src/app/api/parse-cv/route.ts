@@ -1,7 +1,8 @@
 export const runtime = "nodejs";
+
 import { NextRequest, NextResponse } from "next/server";
 import { parseFile, isValidCVFile } from "@/lib/file-parser";
-import { parseCVWithGemini } from "@/lib/gemini";
+import { parseCVWithGroq } from "@/lib/gemini";
 import { CVData } from "@/types/cv";
 
 export async function POST(request: NextRequest) {
@@ -40,10 +41,11 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        const cvData = await parseCVWithGemini(textContent, file.name);
+        const cvData = await parseCVWithGroq(textContent, file.name);
         results.push(cvData);
       } catch (error) {
         console.error(`Error processing ${file.name}:`, error);
+
         errors.push({
           fileName: file.name,
           error:
@@ -61,6 +63,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Parse CV API error:", error);
+
     return NextResponse.json(
       {
         success: false,
