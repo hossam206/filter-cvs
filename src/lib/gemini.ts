@@ -81,7 +81,7 @@ ${textContent}
 
   try {
     const response = await getGeminiClient().models.generateContent({
-      model: "gemini-1.5-pro",
+      model: "gemini-flash-latest",
       contents: [
         {
           role: "user",
