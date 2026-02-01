@@ -190,7 +190,7 @@ export default function Home() {
               <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
                 Screen CVs with{" "}
                 <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-                  AI Power
+                  s AI hossa
                 </span>
               </h2>
               <p className="text-lg text-gray-400 mb-8">
