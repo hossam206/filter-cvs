@@ -1,6 +1,10 @@
 "use client";
 
 import { CVData } from "@/types/cv";
+import {
+  calculateYearsFromDuration,
+  formatYears,
+} from "@/lib/calculate-company-years";
 
 interface CVCardProps {
   cv: CVData;
@@ -8,7 +12,7 @@ interface CVCardProps {
 }
 
 export default function CVCard({ cv, rank }: CVCardProps) {
-  const lastTwoCompanies = cv.companies.slice(0, 2);
+  const companies = cv.companies;
 
   const getScoreColor = (score?: number) => {
     if (!score) return "from-gray-500 to-gray-600";
@@ -56,13 +60,14 @@ export default function CVCard({ cv, rank }: CVCardProps) {
         <div className="flex items-center space-x-3">
           <span
             className={`
-            px-3 py-1 rounded-full text-xs font-medium border
+            px-3 py-1 rounded-full text-xs font-medium border flex items-center gap-2
             ${getExperienceBadgeColor(cv.yearsOfExperience)}
           `}
           >
-            {cv.yearsOfExperience} years exp.
+            <span className="text-sm  ">{`( ${cv.yearsOfExperience} )`}</span>
+            years Experience
           </span>
-          <span className="text-xs text-gray-500">{cv.fileName}</span>
+          {/* <span className="text-xs text-gray-500">{cv.fileName}</span> */}
         </div>
       </div>
 
@@ -70,41 +75,60 @@ export default function CVCard({ cv, rank }: CVCardProps) {
       <p className="text-gray-400 text-sm mb-4 line-clamp-3">{cv.summary}</p>
 
       {/* Companies */}
-      {lastTwoCompanies.length > 0 && (
+      {companies.length > 0 && (
         <div className="mb-4">
           <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">
-            Recent Experience
+            Work Experience
           </h4>
           <div className="space-y-2">
-            {lastTwoCompanies.map((company, index) => (
-              <div
-                key={index}
-                className="flex items-start space-x-3 p-3 rounded-xl bg-gray-700/30"
-              >
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center flex-shrink-0">
-                  <svg
-                    className="w-4 h-4 text-purple-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                    />
-                  </svg>
+            {companies.map((company, index) => {
+              // Check if this is a current/present job
+              const isCurrentJob = /present|current|now/i.test(
+                company.duration,
+              );
+
+              const years = calculateYearsFromDuration(company.duration);
+              const yearsDisplay = isCurrentJob
+                ? "Present"
+                : formatYears(years);
+
+              return (
+                <div
+                  key={index}
+                  className="flex items-start space-x-3 p-3 rounded-xl bg-gray-700/30"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center flex-shrink-0">
+                    <svg
+                      className="w-4 h-4 text-purple-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                      />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">
+                      {company.position}
+                    </p>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs text-gray-400">{company.name}</p>
+                      <span
+                        className={`text-sm font-semibold whitespace-nowrap ${isCurrentJob ? "text-green-400" : "text-purple-400"}`}
+                      >
+                        {yearsDisplay}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500">{company.duration}</p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">
-                    {company.position}
-                  </p>
-                  <p className="text-xs text-gray-400">{company.name}</p>
-                  <p className="text-xs text-gray-500">{company.duration}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
