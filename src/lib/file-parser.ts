@@ -1,12 +1,8 @@
 import mammoth from "mammoth";
-import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
-
-// Disable worker to avoid browser-specific dependencies
-pdfjsLib.GlobalWorkerOptions.workerSrc = "";
 
 export async function parseFile(
   buffer: Buffer,
-  fileName: string
+  fileName: string,
 ): Promise<string> {
   const extension = fileName.toLowerCase().split(".").pop();
 
@@ -30,30 +26,45 @@ export async function parseFile(
 
 async function parsePDF(buffer: Buffer): Promise<string> {
   try {
-    // Load the PDF document
-    const loadingTask = pdfjsLib.getDocument({
-      data: new Uint8Array(buffer),
-      useSystemFonts: true,
-      standardFontDataUrl: undefined,
+    // pdf2json is a CommonJS module
+    const PDFParser = require("pdf2json");
+
+    return new Promise((resolve, reject) => {
+      const pdfParser = new PDFParser();
+
+      pdfParser.on("pdfParser_dataError", (errData: any) => {
+        reject(new Error(errData.parserError));
+      });
+
+      pdfParser.on("pdfParser_dataReady", (pdfData: any) => {
+        try {
+          // Extract text from all pages
+          const text = pdfData.Pages.map((page: any) => {
+            return page.Texts.map((textItem: any) => {
+              return textItem.R.map((r: any) => {
+                try {
+                  return decodeURIComponent(r.T);
+                } catch (e) {
+                  // If decoding fails, return the text as-is
+                  return r.T;
+                }
+              }).join("");
+            }).join(" ");
+          }).join("\n");
+
+          resolve(text);
+        } catch (err) {
+          reject(err);
+        }
+      });
+
+      pdfParser.parseBuffer(buffer);
     });
-    
-    const pdf = await loadingTask.promise;
-    const textParts: string[] = [];
-
-    // Extract text from each page
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items
-        .map((item: any) => item.str)
-        .join(" ");
-      textParts.push(pageText);
-    }
-
-    return textParts.join("\n");
   } catch (error) {
     console.error("PDF parsing error:", error);
-    throw new Error("Failed to parse PDF file");
+    throw new Error(
+      `Failed to parse PDF: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
   }
 }
 

@@ -1,17 +1,19 @@
 "use client";
-
 import { useState, useMemo, useCallback } from "react";
 import FileUpload from "@/components/FileUpload";
 import FilterPanel from "@/components/FilterPanel";
 import CVGrid from "@/components/CVGrid";
 import { CVData, FilterCriteria } from "@/types/cv";
 import { calculateMatchScore } from "@/lib/mathScore";
+import { IoReloadOutline } from "react-icons/io5";
 
 export default function Home() {
   const [cvs, setCvs] = useState<CVData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [processingStatus, setProcessingStatus] = useState<string>("");
+  const [files, setFiles] = useState<File[]>([]);
+
   const [filters, setFilters] = useState<FilterCriteria>({
     minExperience: 0,
     maxExperience: 50,
@@ -52,22 +54,23 @@ export default function Home() {
         );
       } else {
         if (result.errors && result.errors.length > 0) {
-          setError(
-            result.errors
-              .map((e: any) => `${e.fileName}: ${e.error}`)
-              .join("\n"),
-          );
+          setError(result.errors.map((e: any) => ` ${e.error}`).join("\n"));
         } else {
-          setError("No valid CVs could be processed");
+          setError(
+            "Hmm...something seems to have gone wrong. Please try again.",
+          );
         }
       }
-
       if (result.errors && result.errors.length > 0) {
         console.warn("Some files had errors:", result.errors);
       }
     } catch (err) {
       console.error("Error processing CVs:", err);
-      setError(err instanceof Error ? err.message : "Failed to process CVs");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Hmm...something seems to have gone wrong.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -185,6 +188,7 @@ export default function Home() {
 
         <div className="container mx-auto px-6 py-8">
           {/* Hero Section - shown when no CVs */}
+
           {cvs.length === 0 && !isLoading && (
             <div className="max-w-3xl mx-auto text-center mb-12">
               <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
@@ -207,6 +211,7 @@ export default function Home() {
               <FileUpload
                 onFilesSelected={handleFilesSelected}
                 isLoading={isLoading}
+                setFiles={setFiles}
               />
               {processingStatus && !error && (
                 <p className="text-center text-sm text-gray-400 mt-4">
@@ -214,8 +219,17 @@ export default function Home() {
                 </p>
               )}
               {error && (
-                <div className="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center">
+                <div className="flex items-center justify-between gap-3 mt-4 p-4 bg-[#FEF6F5] rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center">
                   {error}
+                  <button
+                    onClick={() => {
+                      handleFilesSelected(files);
+                      setError("");
+                    }}
+                    className="cursor-pointer text-sm p-4 bg-white rounded-lg text-gray-800  hover:text-gray-800 flex items-center justify-center px-3 py-1 border border-gray-500 hover:border-gray-200 hover:opacity-80  transition-all duration-200 gap-2"
+                  >
+                    <IoReloadOutline size={16} /> Retry
+                  </button>
                 </div>
               )}
             </div>
@@ -262,7 +276,7 @@ export default function Home() {
                           d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
                         />
                       </svg>
-                      <span>Upload New CVs</span>
+                      <span className="!cursor-pointer">Upload New CVs</span>
                     </button>
                   </div>
                 </div>
