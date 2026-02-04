@@ -2,6 +2,7 @@ export interface Company {
   name: string;
   position: string;
   duration: string;
+  achievements?: string[];
 }
 
 export interface CVData {

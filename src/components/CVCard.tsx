@@ -125,6 +125,23 @@ export default function CVCard({ cv, rank }: CVCardProps) {
                       </span>
                     </div>
                     <p className="text-xs text-gray-500">{company.duration}</p>
+
+                    {/* Achievements */}
+                    {company.achievements && company.achievements.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {company.achievements.map((achievement, achIndex) => (
+                          <div
+                            key={achIndex}
+                            className="flex items-start space-x-1.5"
+                          >
+                            <span className="text-purple-400 text-xs mt-0.5">•</span>
+                            <p className="text-xs text-gray-300 leading-relaxed">
+                              {achievement}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               );

@@ -42,7 +42,8 @@ Return a JSON object with the following structure (and nothing else, just the ra
     {
       "name": "Company name",
       "position": "Job title",
-      "duration": "Duration worked"
+      "duration": "Duration worked",
+      "achievements": ["achievement 1", "achievement 2", "achievement 3"]
     }
   ],
   "summary": "A brief 2-3 sentence summary"
@@ -54,6 +55,8 @@ Rules:
 - No explanations
 - Do NOT invent data
 - Estimate conservatively if unclear
+- For each company, extract 2-5 key achievements, accomplishments, or responsibilities from the CV text
+- If no achievements are mentioned for a company, use an empty array
 
 CV TEXT:
 """
@@ -101,6 +104,7 @@ ${textContent}
             name: c.name || "Unknown Company",
             position: c.position || "Unknown Position",
             duration: c.duration || "N/A",
+            achievements: Array.isArray(c.achievements) ? c.achievements : [],
           }))
         : [],
       summary: parsed.summary || "No summary available",
