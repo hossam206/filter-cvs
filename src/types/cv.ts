@@ -17,6 +17,8 @@ export interface CVData {
   summary: string;
   matchScore?: number;
   rawText?: string;
+  originalFile?: string; // base64 encoded original file
+  fileType?: string; // MIME type of original file
 }
 
 export interface FilterCriteria {

@@ -5,6 +5,8 @@ import {
   calculateYearsFromDuration,
   formatYears,
 } from "@/lib/calculate-company-years";
+import { downloadOriginalCV } from "@/lib/download-original-cv";
+import { HiDownload } from "react-icons/hi";
 
 interface CVCardProps {
   cv: CVData;
@@ -13,6 +15,10 @@ interface CVCardProps {
 
 export default function CVCard({ cv, rank }: CVCardProps) {
   const companies = cv.companies;
+
+  const handleDownload = () => {
+    downloadOriginalCV(cv);
+  };
 
   const getScoreColor = (score?: number) => {
     if (!score) return "from-gray-500 to-gray-600";
@@ -127,21 +133,24 @@ export default function CVCard({ cv, rank }: CVCardProps) {
                     <p className="text-xs text-gray-500">{company.duration}</p>
 
                     {/* Achievements */}
-                    {company.achievements && company.achievements.length > 0 && (
-                      <div className="mt-2 space-y-1">
-                        {company.achievements.map((achievement, achIndex) => (
-                          <div
-                            key={achIndex}
-                            className="flex items-start space-x-1.5"
-                          >
-                            <span className="text-purple-400 text-xs mt-0.5">•</span>
-                            <p className="text-xs text-gray-300 leading-relaxed">
-                              {achievement}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    {company.achievements &&
+                      company.achievements.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {company.achievements.map((achievement, achIndex) => (
+                            <div
+                              key={achIndex}
+                              className="flex items-start space-x-1.5"
+                            >
+                              <span className="text-purple-400 text-xs mt-0.5">
+                                •
+                              </span>
+                              <p className="text-xs text-gray-300 leading-relaxed">
+                                {achievement}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                   </div>
                 </div>
               );
@@ -179,13 +188,13 @@ export default function CVCard({ cv, rank }: CVCardProps) {
         <div className="mt-4 pt-4 border-t border-gray-700/50 flex items-center space-x-4 text-xs text-gray-500">
           {cv.email && (
             <span className="flex items-center space-x-1">
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                 <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
               </svg>
               <a
                 href={`mailto:${cv.email}`}
-                className="truncate max-w-[150px] hover:text-sky-600 hover:underline"
+                className="truncate max-w-[150px] text-sm hover:text-sky-600 hover:underline"
               >
                 {cv.email}
               </a>
@@ -206,6 +215,20 @@ export default function CVCard({ cv, rank }: CVCardProps) {
           )}
         </div>
       )}
+
+      {/* Download Button */}
+      <div className="mt-4">
+        <button
+          onClick={handleDownload}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium text-sm transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/30 cursor-pointer"
+        >
+          Download CV
+          <HiDownload
+            size={20}
+            className="w-6 h-6 text-white  rounded-full p-1"
+          />
+        </button>
+      </div>
     </div>
   );
 }

@@ -42,6 +42,12 @@ export async function POST(request: NextRequest) {
         }
 
         const cvData = await parseCVWithGroq(textContent, file.name);
+
+        // Store original file as base64
+        const base64File = buffer.toString('base64');
+        cvData.originalFile = base64File;
+        cvData.fileType = file.type;
+
         results.push(cvData);
       } catch (error) {
         console.error(`Error processing ${file.name}:`, error);
