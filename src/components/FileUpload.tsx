@@ -170,7 +170,7 @@ export default function FileUpload({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={`
-          relative border-2 border-dashed rounded-2xl p-12
+          relative border-2 border-dashed rounded-2xl p-8 md:p-10
           transition-all duration-300 ease-out
           ${
             isDragging
@@ -207,16 +207,16 @@ export default function FileUpload({
           />
         )}
 
-        <div className="flex flex-col items-center justify-center space-y-4">
+        <div className="flex flex-col items-center justify-center space-y-3">
           <div
             className={`
-            w-20 h-20 rounded-full flex items-center justify-center
+            w-16 h-16 rounded-full flex items-center justify-center
             transition-all duration-300
             ${isDragging ? "bg-purple-500/30" : "bg-gradient-to-br from-purple-600/20 to-blue-600/20"}
           `}
           >
             <svg
-              className={`w-10 h-10 transition-transform duration-300 ${
+              className={`w-8 h-8 transition-transform duration-300 ${
                 isDragging ? "scale-110 text-purple-400" : "text-gray-400"
               }`}
               fill="none"
@@ -233,18 +233,18 @@ export default function FileUpload({
           </div>
 
           <div className="text-center">
-            <p className="text-xl font-semibold text-white mb-2">
+            <p className="text-lg font-semibold text-white mb-1">
               {uploadMode === "files"
                 ? "Drag & Drop CV Files"
                 : "Drag & Drop CV Folder"}
             </p>
-            <p className="text-gray-400">
+            <p className="text-sm text-gray-400">
               {uploadMode === "files"
                 ? "or click to browse for files"
                 : "or click to browse for a folder"}
             </p>
-            <p className="text-sm text-gray-500 mt-2">
-              Supported formats: PDF, DOCX, DOC, TXT
+            <p className="text-xs text-gray-500 mt-2">
+              PDF, DOCX, DOC, TXT
             </p>
           </div>
         </div>

@@ -234,25 +234,23 @@ export default function Home() {
           {/* Hero Section - shown when no CVs */}
 
           {cvs.length === 0 && !isLoading && (
-            <div className="max-w-3xl mx-auto text-center mb-12">
-              <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            <div className="max-w-3xl mx-auto text-center mb-6 lg:mb-8">
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3">
                 Screen CVs with{" "}
                 <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
                   AI Power
                 </span>
               </h2>
-              <p className="text-lg text-gray-400 mb-8">
-                Upload a folder of resumes and let our AI extract, analyze, and
-                rank candidates based on your criteria. Find the perfect match
-                in seconds.
+              <p className="text-base md:text-lg text-gray-400">
+                Upload resumes and let AI rank candidates against your criteria.
               </p>
             </div>
           )}
 
           {/* Upload Section */}
           {cvs.length === 0 && (
-            <div className="max-w-2xl mx-auto mb-12">
-              <div className="mb-6">
+            <div className="max-w-6xl mx-auto mb-12">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                 <ATSPanel
                   variant="card"
                   atsEnabled={!!filters.atsEnabled}
@@ -263,18 +261,18 @@ export default function Home() {
                   onJobDescriptionChange={handleJobDescriptionChange}
                   showJobDescriptionError={atsValidationError}
                 />
+                <FileUpload
+                  onFilesSelected={handleFilesSelected}
+                  isLoading={isLoading}
+                  setFiles={setFiles}
+                  disabled={isAtsBlocked}
+                  disabledReason={
+                    isAtsBlocked
+                      ? "Enter a job description before uploading."
+                      : undefined
+                  }
+                />
               </div>
-              <FileUpload
-                onFilesSelected={handleFilesSelected}
-                isLoading={isLoading}
-                setFiles={setFiles}
-                disabled={isAtsBlocked}
-                disabledReason={
-                  isAtsBlocked
-                    ? "Enter a job description before uploading."
-                    : undefined
-                }
-              />
               {processingStatus && !error && (
                 <p className="text-center text-sm text-gray-400 mt-4">
                   {processingStatus}
