@@ -249,10 +249,10 @@ export default function Home() {
 
           {/* Upload Section */}
           {cvs.length === 0 && (
-            <div className="max-w-6xl mx-auto mb-12">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            <div className="max-w-3xl mx-auto mb-12">
+              <div className="mb-4">
                 <ATSPanel
-                  variant="card"
+                  variant="compact"
                   atsEnabled={!!filters.atsEnabled}
                   jobTitle={filters.jobTitle ?? ""}
                   jobDescription={filters.jobDescription ?? ""}
@@ -261,18 +261,18 @@ export default function Home() {
                   onJobDescriptionChange={handleJobDescriptionChange}
                   showJobDescriptionError={atsValidationError}
                 />
-                <FileUpload
-                  onFilesSelected={handleFilesSelected}
-                  isLoading={isLoading}
-                  setFiles={setFiles}
-                  disabled={isAtsBlocked}
-                  disabledReason={
-                    isAtsBlocked
-                      ? "Enter a job description before uploading."
-                      : undefined
-                  }
-                />
               </div>
+              <FileUpload
+                onFilesSelected={handleFilesSelected}
+                isLoading={isLoading}
+                setFiles={setFiles}
+                disabled={isAtsBlocked}
+                disabledReason={
+                  isAtsBlocked
+                    ? "Enter a job description before uploading."
+                    : undefined
+                }
+              />
               {processingStatus && !error && (
                 <p className="text-center text-sm text-gray-400 mt-4">
                   {processingStatus}
