@@ -1,5 +1,68 @@
 import { CVData } from "@/types/cv";
 
+const ATS_STOPWORDS = new Set([
+  "the", "and", "for", "with", "you", "are", "our", "will", "this", "that",
+  "have", "has", "your", "from", "any", "all", "into", "but", "not", "who",
+  "out", "use", "can", "may", "per", "via", "etc", "such", "must", "should",
+  "their", "them", "they", "than", "then", "also", "other", "more", "less",
+  "able", "ability", "team", "role", "work", "working", "responsibilities",
+  "requirements", "preferred", "qualifications", "about", "looking",
+]);
+
+function tokenize(text: string): string[] {
+  return text
+    .toLowerCase()
+    .split(/[^a-z0-9+#.]+/)
+    .map((t) => t.replace(/^\.+|\.+$/g, ""))
+    .filter((t) => t.length >= 3 && !ATS_STOPWORDS.has(t));
+}
+
+export function calculateATSScore(
+  cv: CVData,
+  jobTitle: string,
+  jobDescription: string,
+): number {
+  const titleText = (jobTitle ?? "").trim();
+  const descText = (jobDescription ?? "").trim();
+  if (!titleText && !descText) return 0;
+
+  const titleTokens = new Set(tokenize(titleText));
+  const descTokens = new Set(tokenize(descText));
+
+  const weights = new Map<string, number>();
+  for (const tok of descTokens) weights.set(tok, 1);
+  for (const tok of titleTokens) weights.set(tok, (weights.get(tok) ?? 0) + 3);
+  if (weights.size === 0) return 0;
+
+  const cvSkillsLower = cv.skills.map((s) => s.toLowerCase());
+  const cvCorpusParts: string[] = [
+    cv.skills.join(" "),
+    cv.summary ?? "",
+    ...cv.companies.flatMap((c) => [
+      c.position ?? "",
+      c.name ?? "",
+      ...(c.achievements ?? []),
+    ]),
+    cv.rawText ?? "",
+  ];
+  const cvCorpus = cvCorpusParts.join(" ").toLowerCase();
+
+  let totalWeight = 0;
+  let matchedWeight = 0;
+  for (const [tok, weight] of weights) {
+    const skillBonus = cvSkillsLower.some((s) => s.includes(tok)) ? 1 : 0;
+    const effectiveWeight = weight + skillBonus;
+    totalWeight += effectiveWeight;
+    if (cvCorpus.includes(tok)) {
+      matchedWeight += effectiveWeight;
+    }
+  }
+
+  if (totalWeight === 0) return 0;
+  const pct = Math.round((matchedWeight / totalWeight) * 100);
+  return Math.max(0, Math.min(100, pct));
+}
+
 export function calculateMatchScore(
   cv: CVData,
   criteria: {

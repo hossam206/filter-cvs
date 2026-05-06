@@ -26,6 +26,9 @@ export interface FilterCriteria {
   maxExperience: number;
   skills: string[];
   searchQuery: string;
+  atsEnabled?: boolean;
+  jobTitle?: string;
+  jobDescription?: string;
 }
 
 export interface ParsedCVResponse {

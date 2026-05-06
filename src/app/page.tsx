@@ -4,7 +4,7 @@ import FileUpload from "@/components/FileUpload";
 import FilterPanel from "@/components/FilterPanel";
 import CVGrid from "@/components/CVGrid";
 import { CVData, FilterCriteria } from "@/types/cv";
-import { calculateMatchScore } from "@/lib/mathScore";
+import { calculateATSScore, calculateMatchScore } from "@/lib/mathScore";
 import { IoReloadOutline } from "react-icons/io5";
 
 export default function Home() {
@@ -19,6 +19,9 @@ export default function Home() {
     maxExperience: 50,
     skills: [],
     searchQuery: "",
+    atsEnabled: false,
+    jobTitle: "",
+    jobDescription: "",
   });
 
   const handleFilesSelected = useCallback(async (files: File[]) => {
@@ -127,13 +130,24 @@ export default function Home() {
     }
 
     // Calculate match scores and sort
+    const useAts =
+      !!filters.atsEnabled &&
+      ((filters.jobTitle ?? "").trim().length > 0 ||
+        (filters.jobDescription ?? "").trim().length > 0);
+
     const withScores = filtered.map((cv) => ({
       ...cv,
-      matchScore: calculateMatchScore(cv, {
-        minExperience: filters.minExperience,
-        maxExperience: filters.maxExperience,
-        skills: filters.skills,
-      }),
+      matchScore: useAts
+        ? calculateATSScore(
+            cv,
+            filters.jobTitle ?? "",
+            filters.jobDescription ?? "",
+          )
+        : calculateMatchScore(cv, {
+            minExperience: filters.minExperience,
+            maxExperience: filters.maxExperience,
+            skills: filters.skills,
+          }),
     }));
 
     // Sort by match score (highest first)
@@ -259,6 +273,9 @@ export default function Home() {
                           maxExperience: 50,
                           skills: [],
                           searchQuery: "",
+                          atsEnabled: false,
+                          jobTitle: "",
+                          jobDescription: "",
                         });
                       }}
                       className="w-full py-3 px-4 rounded-xl border border-gray-700 text-gray-400 hover:text-white hover:border-purple-500 transition-all duration-200 flex items-center justify-center space-x-2"
