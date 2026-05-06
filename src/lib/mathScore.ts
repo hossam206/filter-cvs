@@ -17,6 +17,36 @@ function tokenize(text: string): string[] {
     .filter((t) => t.length >= 3 && !ATS_STOPWORDS.has(t));
 }
 
+export function extractMinYearsRequired(text: string): number | null {
+  if (!text) return null;
+  const lower = text.toLowerCase();
+  const patterns: RegExp[] = [
+    /(\d{1,2})\s*\+\s*years?/g,
+    /at\s+least\s+(\d{1,2})\s*\+?\s*years?/g,
+    /minimum\s+(?:of\s+)?(\d{1,2})\s*\+?\s*years?/g,
+    /(\d{1,2})\s*-\s*\d{1,2}\s*years?/g,
+    /(\d{1,2})\s*years?\s+of\s+experience/g,
+  ];
+  let max = 0;
+  for (const re of patterns) {
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(lower)) !== null) {
+      const n = parseInt(m[1], 10);
+      if (!isNaN(n) && n > 0 && n < 50 && n > max) max = n;
+    }
+  }
+  return max > 0 ? max : null;
+}
+
+export function computeExperienceMultiplier(
+  cvYears: number,
+  requiredYears: number | null,
+): number {
+  if (!requiredYears || requiredYears <= 0) return 1.0;
+  const ratio = cvYears / requiredYears;
+  return Math.max(0.5, Math.min(1.0, ratio));
+}
+
 export function calculateATSScore(
   cv: CVData,
   jobTitle: string,
@@ -59,8 +89,13 @@ export function calculateATSScore(
   }
 
   if (totalWeight === 0) return 0;
-  const pct = Math.round((matchedWeight / totalWeight) * 100);
-  return Math.max(0, Math.min(100, pct));
+  const rawPct = (matchedWeight / totalWeight) * 100;
+
+  const required = extractMinYearsRequired(`${titleText} ${descText}`);
+  const expMul = computeExperienceMultiplier(cv.yearsOfExperience, required);
+  const adjusted = rawPct * expMul;
+
+  return Math.max(0, Math.min(100, Math.round(adjusted)));
 }
 
 export function calculateMatchScore(

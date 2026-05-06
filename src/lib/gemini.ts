@@ -115,3 +115,71 @@ ${textContent}
     throw new Error("Failed to parse CV content");
   }
 }
+
+export interface SemanticScoreCV {
+  id: string;
+  name: string;
+  yearsOfExperience: number;
+  summary: string;
+  skills: string[];
+  companies: { name: string; position: string }[];
+}
+
+export async function scoreCVsSemanticallyWithGroq(
+  jobTitle: string,
+  jobDescription: string,
+  cvs: SemanticScoreCV[],
+): Promise<Record<string, number>> {
+  if (cvs.length === 0) return {};
+
+  const cvBlock = cvs
+    .map(
+      (cv) =>
+        `[id:${cv.id}]
+Name: ${cv.name}
+Years of experience: ${cv.yearsOfExperience}
+Summary: ${cv.summary}
+Skills: ${(cv.skills || []).join(", ")}
+Experience: ${(cv.companies || [])
+          .map((c) => `${c.position} @ ${c.name}`)
+          .join("; ")}`,
+    )
+    .join("\n\n");
+
+  const prompt = `You are an experienced technical recruiter scoring CVs against a job opening.
+For EACH candidate, output a semantic match score from 0 to 100.
+Consider: required skills/technologies, seniority and years of experience, domain experience, role responsibilities.
+Be strict but fair. Do not reward keyword stuffing — reward actual relevance to the role.
+
+JOB TITLE: ${jobTitle || "(not specified)"}
+JOB DESCRIPTION:
+${jobDescription || "(not specified)"}
+
+CANDIDATES:
+${cvBlock}
+
+Respond with ONLY a JSON object in this exact shape:
+{ "scores": { "<id>": <0-100 integer>, ... } }
+Include every candidate id from above. No commentary.`;
+
+  const groq = getGroqClient();
+  const response = await groq.chat.completions.create({
+    model: "llama-3.3-70b-versatile",
+    messages: [{ role: "user", content: prompt }],
+    response_format: { type: "json_object" },
+    temperature: 0,
+  });
+
+  const content = response.choices[0]?.message?.content || "{}";
+  const parsed = JSON.parse(content);
+  const scores: Record<string, number> = {};
+  if (parsed.scores && typeof parsed.scores === "object") {
+    for (const [id, val] of Object.entries(parsed.scores)) {
+      const n = typeof val === "number" ? val : parseInt(String(val), 10);
+      if (!isNaN(n)) {
+        scores[id] = Math.max(0, Math.min(100, Math.round(n)));
+      }
+    }
+  }
+  return scores;
+}

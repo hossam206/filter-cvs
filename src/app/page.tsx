@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import FileUpload from "@/components/FileUpload";
 import FilterPanel from "@/components/FilterPanel";
 import CVGrid from "@/components/CVGrid";
@@ -15,6 +15,10 @@ export default function Home() {
   const [processingStatus, setProcessingStatus] = useState<string>("");
   const [files, setFiles] = useState<File[]>([]);
   const [atsValidationError, setAtsValidationError] = useState(false);
+  const [semanticScores, setSemanticScores] = useState<Record<string, number>>(
+    {},
+  );
+  const [semanticLoading, setSemanticLoading] = useState(false);
 
   const [filters, setFilters] = useState<FilterCriteria>({
     minExperience: 0,
@@ -163,26 +167,108 @@ export default function Home() {
     const useAts = !!filters.atsEnabled;
     const useTitleOnly = !useAts && trimmedTitle.length > 0;
 
-    const withScores = filtered.map((cv) => ({
-      ...cv,
-      matchScore: useAts
-        ? calculateATSScore(
-            cv,
-            filters.jobTitle ?? "",
-            filters.jobDescription ?? "",
-          )
-        : useTitleOnly
-          ? calculateATSScore(cv, filters.jobTitle ?? "", "")
-          : calculateMatchScore(cv, {
-              minExperience: filters.minExperience,
-              maxExperience: filters.maxExperience,
-              skills: filters.skills,
-            }),
-    }));
+    const withScores = filtered.map((cv) => {
+      let score: number;
+      if (useAts) {
+        const keyword = calculateATSScore(
+          cv,
+          filters.jobTitle ?? "",
+          filters.jobDescription ?? "",
+        );
+        const semantic = semanticScores[cv.id];
+        score =
+          semantic === undefined
+            ? keyword
+            : Math.round(0.6 * keyword + 0.4 * semantic);
+      } else if (useTitleOnly) {
+        score = calculateATSScore(cv, filters.jobTitle ?? "", "");
+      } else {
+        score = calculateMatchScore(cv, {
+          minExperience: filters.minExperience,
+          maxExperience: filters.maxExperience,
+          skills: filters.skills,
+        });
+      }
+      return { ...cv, matchScore: score };
+    });
 
     // Sort by match score (highest first)
     return withScores.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
-  }, [cvs, filters]);
+  }, [cvs, filters, semanticScores]);
+
+  // Debounced semantic ATS scoring via Groq when ATS is on
+  useEffect(() => {
+    if (!filters.atsEnabled) {
+      setSemanticScores((prev) =>
+        Object.keys(prev).length > 0 ? {} : prev,
+      );
+      setSemanticLoading(false);
+      return;
+    }
+    const title = (filters.jobTitle ?? "").trim();
+    const desc = (filters.jobDescription ?? "").trim();
+    if (!title && !desc) {
+      setSemanticScores((prev) =>
+        Object.keys(prev).length > 0 ? {} : prev,
+      );
+      setSemanticLoading(false);
+      return;
+    }
+    if (cvs.length === 0) return;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(async () => {
+      setSemanticLoading(true);
+      try {
+        const chunkSize = 30;
+        const merged: Record<string, number> = {};
+        for (let i = 0; i < cvs.length; i += chunkSize) {
+          if (controller.signal.aborted) return;
+          const chunk = cvs.slice(i, i + chunkSize);
+          const payload = {
+            jobTitle: title,
+            jobDescription: desc,
+            cvs: chunk.map((cv) => ({
+              id: cv.id,
+              name: cv.name,
+              yearsOfExperience: cv.yearsOfExperience,
+              summary: cv.summary,
+              skills: cv.skills,
+              companies: cv.companies.map((c) => ({
+                name: c.name,
+                position: c.position,
+              })),
+            })),
+          };
+          const res = await fetch("/api/ats-score", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+            signal: controller.signal,
+          });
+          if (!res.ok) continue;
+          const data = await res.json();
+          if (data.scores && typeof data.scores === "object") {
+            Object.assign(merged, data.scores);
+          }
+        }
+        if (!controller.signal.aborted) {
+          setSemanticScores(merged);
+        }
+      } catch (err) {
+        if ((err as { name?: string }).name !== "AbortError") {
+          console.error("Failed to fetch semantic scores:", err);
+        }
+      } finally {
+        if (!controller.signal.aborted) setSemanticLoading(false);
+      }
+    }, 1000);
+
+    return () => {
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
+  }, [filters.atsEnabled, filters.jobTitle, filters.jobDescription, cvs]);
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800">
@@ -356,7 +442,33 @@ export default function Home() {
                       </span>
                     )}
                   </h2>
-                  <p className="text-sm text-gray-400">Sorted by match score</p>
+                  <div className="flex items-center gap-3 text-sm text-gray-400">
+                    {semanticLoading && (
+                      <span className="flex items-center gap-1.5 text-purple-300">
+                        <svg
+                          className="animate-spin h-3.5 w-3.5"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                            fill="none"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                        AI scoring…
+                      </span>
+                    )}
+                    <p>Sorted by match score</p>
+                  </div>
                 </div>
                 <CVGrid cvs={filteredAndSortedCvs} isLoading={isLoading} />
               </div>
