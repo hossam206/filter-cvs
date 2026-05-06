@@ -6,12 +6,16 @@ interface FileUploadProps {
   onFilesSelected: (files: File[]) => void;
   isLoading: boolean;
   setFiles: (files: File[]) => void;
+  disabled?: boolean;
+  disabledReason?: string;
 }
 
 export default function FileUpload({
   onFilesSelected,
   isLoading,
   setFiles,
+  disabled = false,
+  disabledReason,
 }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -117,6 +121,7 @@ export default function FileUpload({
   );
 
   const handleUpload = () => {
+    if (disabled || isLoading) return;
     if (selectedFiles.length > 0) {
       onFilesSelected(selectedFiles);
     }
@@ -295,16 +300,21 @@ export default function FileUpload({
             )}
           </div>
 
+          {disabled && disabledReason && (
+            <p className="mb-3 text-sm text-red-400 text-center">
+              {disabledReason}
+            </p>
+          )}
           <button
             onClick={handleUpload}
-            disabled={isLoading}
+            disabled={isLoading || disabled}
             className={`
               w-full py-3 px-6 rounded-xl font-semibold text-white
-              transition-all duration-300 cursor-pointer
+              transition-all duration-300
               ${
-                isLoading
-                  ? "bg-gray-600 cursor-not-allowed"
-                  : "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 hover:shadow-lg hover:shadow-purple-500/25"
+                isLoading || disabled
+                  ? "bg-gray-600 cursor-not-allowed opacity-70"
+                  : "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 hover:shadow-lg hover:shadow-purple-500/25 cursor-pointer"
               }
             `}
           >

@@ -3,6 +3,7 @@ import { useState, useMemo, useCallback } from "react";
 import FileUpload from "@/components/FileUpload";
 import FilterPanel from "@/components/FilterPanel";
 import CVGrid from "@/components/CVGrid";
+import ATSPanel from "@/components/ATSPanel";
 import { CVData, FilterCriteria } from "@/types/cv";
 import { calculateATSScore, calculateMatchScore } from "@/lib/mathScore";
 import { IoReloadOutline } from "react-icons/io5";
@@ -13,6 +14,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [processingStatus, setProcessingStatus] = useState<string>("");
   const [files, setFiles] = useState<File[]>([]);
+  const [atsValidationError, setAtsValidationError] = useState(false);
 
   const [filters, setFilters] = useState<FilterCriteria>({
     minExperience: 0,
@@ -24,7 +26,34 @@ export default function Home() {
     jobDescription: "",
   });
 
+  const isAtsBlocked =
+    !!filters.atsEnabled &&
+    (filters.jobDescription ?? "").trim().length === 0;
+
+  const handleAtsToggle = useCallback(() => {
+    setFilters((prev) => ({ ...prev, atsEnabled: !prev.atsEnabled }));
+    setAtsValidationError(false);
+  }, []);
+
+  const handleJobTitleChange = useCallback((value: string) => {
+    setFilters((prev) => ({ ...prev, jobTitle: value }));
+  }, []);
+
+  const handleJobDescriptionChange = useCallback((value: string) => {
+    setFilters((prev) => ({ ...prev, jobDescription: value }));
+    if (value.trim().length > 0) setAtsValidationError(false);
+  }, []);
+
   const handleFilesSelected = useCallback(async (files: File[]) => {
+    if (
+      filters.atsEnabled &&
+      (filters.jobDescription ?? "").trim().length === 0
+    ) {
+      setAtsValidationError(true);
+      setError("Job description is required when ATS matching is enabled.");
+      return;
+    }
+    setAtsValidationError(false);
     setIsLoading(true);
     setError(null);
     setProcessingStatus(`Processing ${files.length} files...`);
@@ -77,7 +106,7 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [filters.atsEnabled, filters.jobDescription]);
 
   // Extract all unique skills from CVs
   const availableSkills = useMemo(() => {
@@ -222,10 +251,28 @@ export default function Home() {
           {/* Upload Section */}
           {cvs.length === 0 && (
             <div className="max-w-2xl mx-auto mb-12">
+              <div className="mb-6">
+                <ATSPanel
+                  variant="card"
+                  atsEnabled={!!filters.atsEnabled}
+                  jobTitle={filters.jobTitle ?? ""}
+                  jobDescription={filters.jobDescription ?? ""}
+                  onToggle={handleAtsToggle}
+                  onJobTitleChange={handleJobTitleChange}
+                  onJobDescriptionChange={handleJobDescriptionChange}
+                  showJobDescriptionError={atsValidationError}
+                />
+              </div>
               <FileUpload
                 onFilesSelected={handleFilesSelected}
                 isLoading={isLoading}
                 setFiles={setFiles}
+                disabled={isAtsBlocked}
+                disabledReason={
+                  isAtsBlocked
+                    ? "Enter a job description before uploading."
+                    : undefined
+                }
               />
               {processingStatus && !error && (
                 <p className="text-center text-sm text-gray-400 mt-4">
