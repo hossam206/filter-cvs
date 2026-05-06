@@ -31,13 +31,31 @@ export default function ATSPanel({
 
   return (
     <div className={wrapperClass}>
+      <div className="mb-4">
+        <label className="block text-xs font-medium text-gray-400 mb-1.5">
+          Job Title
+        </label>
+        <input
+          type="text"
+          placeholder="e.g. Senior Frontend Engineer"
+          value={jobTitle}
+          onChange={(e) => onJobTitleChange(e.target.value)}
+          className="w-full py-2.5 px-4 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all text-sm"
+        />
+        {!atsEnabled && (
+          <p className="mt-1.5 text-xs text-gray-500">
+            Match score is calculated against this job title.
+          </p>
+        )}
+      </div>
+
       <div className="flex items-center justify-between mb-3">
         <div>
           <label className="block text-sm font-medium text-white">
             Match against ATS
           </label>
           <p className="text-xs text-gray-500 mt-0.5">
-            Score each CV against a job description
+            Score against the full job description
           </p>
         </div>
         <button
@@ -64,20 +82,7 @@ export default function ATSPanel({
         <div className="space-y-3 mt-3">
           <div>
             <label className="block text-xs font-medium text-gray-400 mb-1.5">
-              Job Title
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. Senior Frontend Engineer"
-              value={jobTitle}
-              onChange={(e) => onJobTitleChange(e.target.value)}
-              className="w-full py-2.5 px-4 bg-gray-700/50 border border-gray-600 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-400 mb-1.5">
-              Job Description{" "}
-              <span className="text-red-400">*</span>
+              Job Description <span className="text-red-400">*</span>
             </label>
             <textarea
               rows={6}

@@ -159,10 +159,9 @@ export default function Home() {
     }
 
     // Calculate match scores and sort
-    const useAts =
-      !!filters.atsEnabled &&
-      ((filters.jobTitle ?? "").trim().length > 0 ||
-        (filters.jobDescription ?? "").trim().length > 0);
+    const trimmedTitle = (filters.jobTitle ?? "").trim();
+    const useAts = !!filters.atsEnabled;
+    const useTitleOnly = !useAts && trimmedTitle.length > 0;
 
     const withScores = filtered.map((cv) => ({
       ...cv,
@@ -172,11 +171,13 @@ export default function Home() {
             filters.jobTitle ?? "",
             filters.jobDescription ?? "",
           )
-        : calculateMatchScore(cv, {
-            minExperience: filters.minExperience,
-            maxExperience: filters.maxExperience,
-            skills: filters.skills,
-          }),
+        : useTitleOnly
+          ? calculateATSScore(cv, filters.jobTitle ?? "", "")
+          : calculateMatchScore(cv, {
+              minExperience: filters.minExperience,
+              maxExperience: filters.maxExperience,
+              skills: filters.skills,
+            }),
     }));
 
     // Sort by match score (highest first)
